@@ -100,3 +100,11 @@ def test_add_rejects_non_ascii_title(tmp_path, monkeypatch):
     rc = tt.main(["add", "fiancé"])
     assert rc != 0
     assert not data_file.exists() or tt.load_tasks() == []
+
+
+def test_main_handles_corrupt_data_file(tmp_path, monkeypatch):
+    data_file = tmp_path / "tasks.json"
+    data_file.write_text("{not valid json")
+    monkeypatch.setattr(tt, "DATA_FILE", str(data_file))
+    rc = tt.main(["list"])
+    assert rc != 0
