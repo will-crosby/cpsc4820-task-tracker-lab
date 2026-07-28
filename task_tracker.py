@@ -45,6 +45,15 @@ def next_id(tasks):
     return max((t["id"] for t in tasks), default=0) + 1
 
 
+def validate_title(title):
+    """Return an error message if title is invalid, else None."""
+    if not title.strip():
+        return "Title cannot be empty or whitespace only."
+    if not title.isascii() or not title.isprintable():
+        return "Title must contain only printable ASCII characters."
+    return None
+
+
 def add_task(tasks, title, tag=None):
     """Add a new task and return it."""
     task = {
@@ -127,9 +136,18 @@ def main(argv=None):
     sub.add_parser("stats", help="Show summary statistics")
 
     args = parser.parse_args(argv)
-    tasks = load_tasks()
+
+    try:
+        tasks = load_tasks()
+    except json.JSONDecodeError:
+        print(f"Error: {DATA_FILE} contains invalid JSON.", file=sys.stderr)
+        return 1
 
     if args.command == "add":
+        error = validate_title(args.title)
+        if error:
+            print(f"Error: {error}", file=sys.stderr)
+            return 1
         task = add_task(tasks, args.title, args.tag)
         save_tasks(tasks)
         print(f"Added task {task['id']}: {task['title']}")
